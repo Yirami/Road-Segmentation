@@ -99,3 +99,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Yirmai
+data/
+weights/
+test_data/
+/*.png
+trace/
+evaluate/
