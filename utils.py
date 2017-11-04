@@ -5,11 +5,6 @@ import numpy as np
 import scipy.misc as misc
 import logging
 
-# 在全局区定义句柄，多文件创建logger时，底层自动判断是否需要新建
-# 解释来自：http://bbs.csdn.net/topics/392054240
-file_H = logging.FileHandler(r'trace/train.log')
-console_H = logging.StreamHandler()
-
 class TO_SAVE:
     def __init__(self, best_val_loss_init=10, val_threshold=0.05):
         self.best_val_loss = best_val_loss_init
@@ -25,10 +20,12 @@ class TO_SAVE:
 
 class LOGGER:
     def __init__(self, name):
-        self.logger = logging.getLogger('mylogger')
+        self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)
         self.format = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-        return logger
+
+    def get_logger(self):
+        return self.logger
 
     def add_console(self, default_format=True):
         self.console_H = logging.StreamHandler()
@@ -74,7 +71,8 @@ def get_evaluate_images(evaluate_dir='evaluate'):
         raise ValueError('Path "{}" not exists!'.format(evaluate_dir))
 
     file_list = os.listdir(evaluate_dir)
-    names = [i for i in file_list if os.path.splitext(i)[-1]=='.png']
+    file_list = [i for i in file_list if os.path.splitext(i)[-1]=='.png']
+    names = [i for i in file_list if i.split('-')[-1]!='eval.png']
     if not names:
         raise ValueError('No valid images in Path "{}"!'.format(evaluate_dir))
 
@@ -92,18 +90,6 @@ def load_weights(session, saver, ckpt_name, ckpt_dir=r'trace/pick'):
         saver.restore(session, checkpoint_path)
         return int(ckpt_name.split('-')[1])
 
-def logging_config():
-    logger = logging.getLogger('mylogger')
-    logger.setLevel(logging.DEBUG)
-    file_H.setLevel(logging.DEBUG)
-    console_H.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    file_H.setFormatter(formatter)
-    console_H.setFormatter(formatter)
-    logger.addHandler(file_H)
-    logger.addHandler(console_H)
-    return logger
-
 def overlay_for_2_classes(basic_image, segmentation, color=[0, 255, 0, 127]):
     color = np.array(color).reshape(1,4)
     shape = basic_image.shape
@@ -120,7 +106,7 @@ def overlay_for_2_classes(basic_image, segmentation, color=[0, 255, 0, 127]):
 def confidence_map():
     pass
 
-def save_images(image, name, save_dir='evaluate', prefix=None, postfix=None, ext='.png'):
+def save_images(image, name, save_dir='evaluate', prefix=None, postfix=None, ext='.png', logger=None):
     assert os.path.exists(save_dir)
     file_name = name
     if prefix:
@@ -130,7 +116,24 @@ def save_images(image, name, save_dir='evaluate', prefix=None, postfix=None, ext
     file_name += ext
     file_path = os.path.join(save_dir, file_name)
     misc.imsave(file_path, image)
-    print('Image %s save to %s success!' % (file_name, file_path))
+    if logger:
+        logger.debug('Image %s save to %s success!' % (file_name, file_path))
+
+# 在全局区定义句柄，多文件创建logger时，底层自动判断是否需要新建
+# 解释来自：http://bbs.csdn.net/topics/392054240
+# file_H = logging.FileHandler(r'trace/train.log')
+# console_H = logging.StreamHandler()
+# def logging_config():
+#     logger = logging.getLogger('mylogger')
+#     logger.setLevel(logging.DEBUG)
+#     file_H.setLevel(logging.DEBUG)
+#     console_H.setLevel(logging.INFO)
+#     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+#     file_H.setFormatter(formatter)
+#     console_H.setFormatter(formatter)
+#     logger.addHandler(file_H)
+#     logger.addHandler(console_H)
+#     return logger
 
 if __name__ == '__main__':
     data_dir = r'D:\GitHub\Road-Segmentation\data'

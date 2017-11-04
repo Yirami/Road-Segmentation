@@ -4,14 +4,14 @@ import numpy as np
 import math
 import scipy.misc as misc
 import utils
-logger = utils.logging_config()
 
 color_dict = {'bg':[255, 0, 0, 0], 'road':[255, 0, 255, 1], 'other':[0, 0, 0, 0]}
 
 class Dataset:
 
-    def __init__(self, records_list, batch_size=5, data_dir='data', split_val=True, rate_val=0.3):
-        logger.info('Dataset Initializing ...')
+    def __init__(self, records_list, logger, batch_size=5, data_dir='data', split_val=True, rate_val=0.3):
+        self.logger = logger
+        self.logger.info('Dataset Initializing ...')
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.batch_index = 0
@@ -55,9 +55,9 @@ class Dataset:
         else:
             self.gts = np.array([self.make_exclusive_lables(rec['gt']) for rec in self.records_list])
             np.save(os.path.join(self.data_dir,'gts.npy'), self.gts)
-        logger.info('Dataset load SUCCESS!')
-        logger.info('Shape of images: {}.'.format(self.images.shape))
-        logger.info('Shape of gts: {}.'.format(self.gts.shape))
+        self.logger.info('Dataset load SUCCESS!')
+        self.logger.info('Shape of images: {}.'.format(self.images.shape))
+        self.logger.info('Shape of gts: {}.'.format(self.gts.shape))
 
     def image_enhance(self, image_path):
         img = misc.imread(os.path.join(self.data_dir, image_path))

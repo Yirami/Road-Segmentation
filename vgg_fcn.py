@@ -6,24 +6,24 @@ import sys
 import numpy as np
 import tensorflow as tf
 import utils
-logger = utils.logging_config()
 
 VGG_MEAN = [103.939, 116.779, 123.68]
 
 class FCN:
 
-    def __init__(self, vgg16_weights_path=None):
+    def __init__(self, logger, vgg16_weights_path=None):
+        self.logger = logger
         if vgg16_weights_path is None:
             path = sys.modules[self.__class__.__module__].__file__
             path = os.path.abspath(os.path.join(path, os.pardir))
             vgg16_weights_path = os.path.join(path, 'weights', 'vgg16.npy')
-            logger.info('Load weights from "{}".'.format(vgg16_weights_path))
+            self.logger.info('Load weights from "{}".'.format(vgg16_weights_path))
         if not os.path.isfile(vgg16_weights_path):
-            logger.error('File "{}" not exists.'.format(vgg16_weights_path))
+            self.logger.error('File "{}" not exists.'.format(vgg16_weights_path))
             sys.exit(1)
         self.data_dict = np.load(vgg16_weights_path, encoding='latin1').item()
         self.wd = 5e-4 # 'wd' means weight decay
-        logger.info('Weights loaded successfully!')
+        self.logger.info('Weights loaded successfully!')
 
     def build(self, rgb, train=False, num_classes=20, random_init_fc8=False,
                 debug=False):
@@ -208,7 +208,7 @@ class FCN:
                 new_shape = [shape[0], shape[1], shape[2], num_classes]
             output_shape = tf.stack(new_shape)
 
-            logger.debug('Layer: {}, Fan-in: {}'.format(name, in_features))
+            self.logger.debug('Layer: {}, Fan-in: {}'.format(name, in_features))
             f_shape = [ksize, ksize, num_classes, in_features]
 
             # create
@@ -232,8 +232,8 @@ class FCN:
         init = tf.constant_initializer(value=self.data_dict[name][0],
                                         dtype=tf.float32)
         shape = self.data_dict[name][0].shape
-        logger.info('Layer name: {}'.format(name))
-        logger.info('Layer shape: {}'.format(str(shape)))
+        self.logger.info('Layer name: {}'.format(name))
+        self.logger.info('Layer shape: {}'.format(str(shape)))
         var = tf.get_variable(name='filter', initializer=init, shape=shape,
                                 trainable=True)
         if not tf.get_variable_scope().reuse:
@@ -241,7 +241,7 @@ class FCN:
                                         name='weight_loss')
             tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
                                     weight_decay)
-        _variable_summaries(var)
+        _variable_summaries(var, self.logger)
         return var
 
     def get_bias(self, name, num_classes=None):
@@ -253,7 +253,7 @@ class FCN:
         init = tf.constant_initializer(value=bias_wights, dtype=tf.float32)
         var = tf.get_variable(name='biases', initializer=init, shape=shape,
                                 trainable=True)
-        _variable_summaries(var)
+        _variable_summaries(var, self.logger)
         return var
 
     # def get_fc_weight(self, name):
@@ -266,12 +266,12 @@ class FCN:
     #                                     name='weight_loss')
     #         tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
     #                                 weight_decay)
-    #     _variable_summaries(var)
+    #     _variable_summaries(var, self.logger)
     #     return var
 
     def get_fc_weight_reshape(self, name, shape, num_classes=None):
-        logger.info('Layer name: {}'.format(name))
-        logger.info('Layer shape: {}'.format(str(tuple(shape))))
+        self.logger.info('Layer name: {}'.format(name))
+        self.logger.info('Layer shape: {}'.format(str(tuple(shape))))
         weights = self.data_dict[name][0]
         weights = weights.reshape(shape)
         if num_classes is not None:
@@ -372,14 +372,14 @@ class FCN:
             weight_decay = tf.multiply(
                 tf.nn.l2_loss(var), wd, name='weight_loss')
             tf.add_to_collection(collection_name, weight_decay)
-        _variable_summaries(var)
+        _variable_summaries(var, self.logger)
         return var
 
     def _bias_variable(self, shape, constant=0.0):
         initializer = tf.constant_initializer(constant)
         var = tf.get_variable(name='biases', shape=shape,
                                 initializer=initializer)
-        _variable_summaries(var)
+        _variable_summaries(var, self.logger)
         return var
 
     def _add_wd_and_summary(self, var, wd, collection_name=None):
@@ -389,10 +389,10 @@ class FCN:
             weight_decay = tf.multiply(tf.nn.l2_loss(var), wd,
                                         name='weight_loss')
             tf.add_to_collection(collection_name, weight_decay)
-        _variable_summaries(var)
+        _variable_summaries(var, self.logger)
         return var
 
-def _variable_summaries(var):
+def _variable_summaries(var, logger):
     """Attach a lot of summaries to a Tensor."""
     if not tf.get_variable_scope().reuse:
         name = var.op.name

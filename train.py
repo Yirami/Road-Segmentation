@@ -32,15 +32,18 @@ def train(loss, trainable_vars):
 
 
 if __name__ == '__main__':
-    logger = utils.logging_config()
-    logger.info('---------------------- New Log Start ! ----------------------')
+    log = utils.LOGGER('train_log')
+    log.add_console()
+    log.add_file('train_log.txt')
+    logger = log.get_logger()
+    logger.info('-------------------- New Train Start ! ----------------------')
     with tf.Session() as sess:
         images = tf.placeholder(tf.float32, name='input_images')
         gts = tf.placeholder(tf.int32, name='input_gts')
 
-        fcn_net = vgg_fcn.FCN(vgg16_weights_path = vgg16_weights_path)
+        fcn_net = vgg_fcn.FCN(logger, vgg16_weights_path = vgg16_weights_path)
         with tf.name_scope('content_net'):
-            fcn_net.build(images, train=True, num_classes=num_classes, debug=True)
+            fcn_net.build(images, logger, train=True, num_classes=num_classes, debug=True)
 
         loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
                                                     logits=fcn_net.upscore32,
@@ -70,7 +73,7 @@ if __name__ == '__main__':
             logger.info('Model restored ...')
 
         records_list = utils.make_records_list_for_KITTI(data_dir)
-        data_generator = dgen.Dataset(records_list, batch_size=2)
+        data_generator = dgen.Dataset(records_list, logger, batch_size=2)
 
         opt = utils.TO_SAVE()
         for itr in range(max_iteration):
@@ -88,6 +91,6 @@ if __name__ == '__main__':
                 val_imgs, val_gts, val_names = data_generator.next_val_batch()
                 val_loss, output_imgs = sess.run([loss, fcn_net.pred_with_softmax], feed_dict={images: val_imgs, gts: val_gts})
                 logger.info('Step: %d, Validation_loss: %g' % (itr, val_loss))
-                logger.info('Step: %d, output images shape: %s' % (itr, str(output_imgs.shape)))
+                logger.debug('Step: %d, output images shape: %s' % (itr, str(output_imgs.shape)))
                 if opt.maybe_save(val_loss):
                     saver.save(sess, os.path.join(logs_dir, 'model.ckpt'), itr)

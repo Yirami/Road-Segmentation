@@ -3,7 +3,6 @@
 import tensorflow as tf
 
 import utils
-logger = utils.logging_config()
 
 def evaluate_routine(input_images, output_images, image_names, postfix, threshold=0.5):
     assert input_images.shape[:3] == output_images.shape[:3]
@@ -28,6 +27,6 @@ def restore_and_evaluation(meta_dir, ckpt_dir):
         evaluate_routine(imgs, out_imgs, names, '-eval')
 
 if __name__ == '__main__':
-    meta_dir = 'trace/model.ckpt-0.meta'
-    ckpt_dir = 'trace/model.ckpt-0'
+    meta_dir = 'trace/model.ckpt-5300.meta'
+    ckpt_dir = 'trace/model.ckpt-5300'
     restore_and_evaluation(meta_dir, ckpt_dir)

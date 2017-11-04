@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
 
-import sys
 import tensorflow as tf
 import scipy as scp
 
 import vgg_fcn
 import utils
-logger = utils.logging_config()
 
-img1 = scp.misc.imread('./test_data/tabby_cat.png')
+log = utils.LOGGER('test_log')
+log.add_console()
+logger = log.get_logger()
+
+img = scp.misc.imread('./test_data/tabby_cat.png')
 
 with tf.Session() as sess:
     images = tf.placeholder('float')
-    feed_dict = {images: img1}
+    feed_dict = {images: img}
     batch_images = tf.expand_dims(images, 0)
 
-    fcn = vgg_fcn.FCN()
+    fcn = vgg_fcn.FCN(logger)
     with tf.name_scope("content_vgg"):
         fcn.build(batch_images, debug=True)
 
