@@ -14,7 +14,7 @@ def evaluate_routine(input_images, output_images, image_names, postfix, threshol
         product = utils.overlay_for_2_classes(image, prediction)
         utils.save_images(product, image_names[idx], postfix=postfix)
 
-def restore_and_evaluation(meta_dir, ckpt_dir):
+def restore_and_evaluation(meta_dir, ckpt_dir, batch_size=2):
     with tf.Session() as sess:
         saver = tf.train.import_meta_graph(meta_dir)
         saver.restore(sess, ckpt_dir)
@@ -22,6 +22,7 @@ def restore_and_evaluation(meta_dir, ckpt_dir):
         images = graph.get_tensor_by_name('input_images:0')
         softmax = graph.get_tensor_by_name('content_net/pred_softmax:0')
         imgs, names = utils.get_evaluate_images()
+        
         feed_dict = {images:imgs}
         out_imgs = sess.run(softmax, feed_dict=feed_dict)
         evaluate_routine(imgs, out_imgs, names, '-eval')

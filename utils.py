@@ -6,17 +6,23 @@ import scipy.misc as misc
 import logging
 
 class TO_SAVE:
-    def __init__(self, best_val_loss_init=10, val_threshold=0.02):
+    def __init__(self, best_val_loss_init=10, train_threshold=0.01, val_threshold=0.015):
         self.best_val_loss = best_val_loss_init
+        self.train_threshold = train_threshold
         self.val_threshold = val_threshold
 
     def maybe_save(self, this_val_loss):
         if this_val_loss < self.best_val_loss:
             self.best_val_loss = this_val_loss
             return True
-        elif this_val_loss < self.val_threshold:
-            return True
-        return False
+        else:
+            return this_val_loss < self.val_threshold
+
+    def maybe_save_and_stop(self, this_train_loss, this_val_loss):
+        if self.maybe_save(this_val_loss):
+            return this_train_loss < self.train_threshold
+        else:
+            return False
 
 class LOGGER:
     def __init__(self, name):

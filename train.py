@@ -98,7 +98,6 @@ if __name__ == '__main__':
                     logger.debug('Output images shape: %s' % str(output_imgs.shape))
                 val_loss_mean = val_loss_all/len(val_grps)
                 logger.info('Step: %d, Validation_loss: %g' % (itr, val_loss_mean))
-                if opt.maybe_save(val_loss_mean):
+                if opt.maybe_save_and_stop(train_loss, val_loss_mean):
                     saver.save(sess, os.path.join(logs_dir, 'model.ckpt'), itr)
-                if val_loss_mean<0.02:
                     break
