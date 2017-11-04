@@ -93,4 +93,19 @@ class Dataset:
             return self.images_val, self.gts_val, self.names_val
 
     def all_val_images(self):
-        return self.images_val, self.gts_val, self.names_val
+        assert self.num_val is not None
+        if self.num_val > self.batch_size:
+            groups = []
+            num = self.num_val // self.batch_size
+            imgs_grps = np.split(self.images_val[:self.batch_size*num], num, 0)
+            gts_grps = np.split(self.gts_val[:self.batch_size*num], num, 0)
+            names_grps = [self.names_val[i:i+self.batch_size] for i in range(0, len(self.names_val), self.batch_size)]
+            for idx in range(num):
+                groups.append((imgs_grps[idx], gts_grps[idx], names_grps[idx]))
+            if 0 == self.num_val % self.batch_size:
+                return groups
+            else:
+                groups.append((self.images_val[self.batch_size*num:], self.gts_val[self.batch_size*num:], names_grps[num:]))
+                return groups
+        else:
+            return self.images_val, self.gts_val, self.names_val

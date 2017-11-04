@@ -6,7 +6,7 @@ import scipy.misc as misc
 import logging
 
 class TO_SAVE:
-    def __init__(self, best_val_loss_init=10, val_threshold=0.05):
+    def __init__(self, best_val_loss_init=10, val_threshold=0.02):
         self.best_val_loss = best_val_loss_init
         self.val_threshold = val_threshold
 

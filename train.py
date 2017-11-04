@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
         fcn_net = vgg_fcn.FCN(logger, vgg16_weights_path = vgg16_weights_path)
         with tf.name_scope('content_net'):
-            fcn_net.build(images, logger, train=True, num_classes=num_classes, debug=True)
+            fcn_net.build(images, train=True, num_classes=num_classes, debug=True)
 
         loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
                                                     logits=fcn_net.upscore32,
@@ -88,9 +88,17 @@ if __name__ == '__main__':
                 summary_writer.add_summary(summary_str, itr)
 
             if itr % 100 == 0:
-                val_imgs, val_gts, val_names = data_generator.next_val_batch()
-                val_loss, output_imgs = sess.run([loss, fcn_net.pred_with_softmax], feed_dict={images: val_imgs, gts: val_gts})
-                logger.info('Step: %d, Validation_loss: %g' % (itr, val_loss))
-                logger.debug('Step: %d, output images shape: %s' % (itr, str(output_imgs.shape)))
-                if opt.maybe_save(val_loss):
+                val_grps = data_generator.all_val_images()
+                val_loss_all = 0
+                for idx, (val_imgs, val_gts, val_names) in enumerate(val_grps):
+                    val_loss, output_imgs = sess.run([loss, fcn_net.pred_with_softmax], feed_dict={images: val_imgs, gts: val_gts})
+                    val_loss_all += val_loss
+                    logger.debug('Val in group: %d.' % idx)
+                    logger.debug('Val loss: %g' % val_loss)
+                    logger.debug('Output images shape: %s' % str(output_imgs.shape))
+                val_loss_mean = val_loss_all/len(val_grps)
+                logger.info('Step: %d, Validation_loss: %g' % (itr, val_loss_mean))
+                if opt.maybe_save(val_loss_mean):
                     saver.save(sess, os.path.join(logs_dir, 'model.ckpt'), itr)
+                if val_loss_mean<0.02:
+                    break
