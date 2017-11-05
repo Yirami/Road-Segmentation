@@ -21,13 +21,14 @@ def restore_and_evaluation(meta_dir, ckpt_dir, batch_size=2):
         graph = tf.get_default_graph()
         images = graph.get_tensor_by_name('input_images:0')
         softmax = graph.get_tensor_by_name('content_net/pred_softmax:0')
-        imgs, names = utils.get_evaluate_images()
-        
-        feed_dict = {images:imgs}
-        out_imgs = sess.run(softmax, feed_dict=feed_dict)
-        evaluate_routine(imgs, out_imgs, names, '-eval')
+        imgs_all, names_all = utils.get_evaluate_images()
+        eval_grps = utils.make_groups_for_evaluate(imgs_all, names_all, batch_size)
+        for imgs, names in eval_grps:
+            feed_dict = {images:imgs}
+            out_imgs = sess.run(softmax, feed_dict=feed_dict)
+            evaluate_routine(imgs, out_imgs, names, '-eval')
 
 if __name__ == '__main__':
-    meta_dir = 'trace/model.ckpt-5300.meta'
-    ckpt_dir = 'trace/model.ckpt-5300'
+    meta_dir = 'trace/model.ckpt-1500.meta'
+    ckpt_dir = 'trace/model.ckpt-1500'
     restore_and_evaluation(meta_dir, ckpt_dir)

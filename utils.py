@@ -6,17 +6,17 @@ import scipy.misc as misc
 import logging
 
 class TO_SAVE:
-    def __init__(self, best_val_loss_init=10, train_threshold=0.01, val_threshold=0.015):
+    def __init__(self, best_val_loss_init=10, train_threshold=0.04, val_threshold=0.05):
         self.best_val_loss = best_val_loss_init
         self.train_threshold = train_threshold
         self.val_threshold = val_threshold
 
     def maybe_save(self, this_val_loss):
-        if this_val_loss < self.best_val_loss:
-            self.best_val_loss = this_val_loss
-            return True
-        else:
-            return this_val_loss < self.val_threshold
+        # if this_val_loss < self.best_val_loss:
+        #     self.best_val_loss = this_val_loss
+        #     return True
+        # else:
+        return this_val_loss < self.val_threshold
 
     def maybe_save_and_stop(self, this_train_loss, this_val_loss):
         if self.maybe_save(this_val_loss):
@@ -87,6 +87,23 @@ def get_evaluate_images(evaluate_dir='evaluate'):
         img = misc.imresize(img, image_shape, interp='nearest')
         return img
     return np.array([load_one(name) for name in names]), [extract_name(i) for i in names]
+
+def make_groups_for_evaluate(images, names, group_size):
+    num_imgs = len(images)
+    if  num_imgs > group_size:
+        groups = []
+        num = num_imgs // group_size
+        imgs_grps = np.split(images[:group_size*num], num, 0)
+        names_grps = [names[i:i+group_size] for i in range(0, num_imgs, group_size)]
+        for idx in range(num):
+            groups.append((imgs_grps[idx], names_grps[idx]))
+        if 0 == num_imgs % group_size:
+            return groups
+        else:
+            groups.append((images[group_size*num:], names_grps[num:]))
+            return groups
+    else:
+        return images, names
 
 def load_weights(session, saver, ckpt_name, ckpt_dir=r'trace/pick'):
     checkpoint_path = os.path.join(ckpt_dir, ckpt_name)
